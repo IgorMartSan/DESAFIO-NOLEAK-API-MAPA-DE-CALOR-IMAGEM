@@ -18,14 +18,31 @@ def create_admin_user():
     """Cria ou atualiza um usuário admin padrão."""
     db = SessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").first()
+        username = settings.INITIAL_USER_LOGIN_JWT
+        email = settings.INITIAL_USER_EMAIL_JWT
+        hashed_password = AuthUtils.get_password_hash(settings.INITIAL_USER_PASSWORD_JWT)
 
-        if not admin:
-            # Criação do admin
+        # Busca por usuário existente com MESMO username ou MESMO email
+        admin = db.query(User).filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+
+        if admin:
+            # Atualiza o usuário encontrado
+            admin.username = username
+            admin.email = email
+            admin.hashed_password = hashed_password
+            admin.is_active = True
+            admin.user_type = "admin"
+            db.commit()
+            db.refresh(admin)
+            print(f"🔄 Usuário admin atualizado: {admin.email}")
+        else:
+            # Cria novo usuário admin
             admin_user = User(
-                username="admin",
-                email=settings.INITIAL_USER_EMAIL_JWT,
-                hashed_password=AuthUtils.get_password_hash(settings.INITIAL_USER_PASSWORD_JWT),
+                username=username,
+                email=email,
+                hashed_password=hashed_password,
                 is_active=True,
                 user_type="admin"
             )
@@ -33,16 +50,8 @@ def create_admin_user():
             db.commit()
             db.refresh(admin_user)
             print(f"✅ Usuário admin criado: {admin_user.email}")
-        else:
-            # Atualização do admin existente
-            admin.username = settings.INITIAL_USER_LOGIN_JWT
-            admin.email = settings.INITIAL_USER_EMAIL_JWT
-            admin.hashed_password = AuthUtils.get_password_hash(settings.INITIAL_USER_PASSWORD_JWT)
-            admin.is_active = True
-            db.commit()
-            db.refresh(admin)
-            print(f"🔄 Usuário admin atualizado: {admin.email}")
     except Exception as e:
+        db.rollback()
         print(f"❌ Erro ao criar/atualizar usuário admin: {e}")
     finally:
         db.close()

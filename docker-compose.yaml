@@ -21,12 +21,11 @@ services:
         DB_PASSWORD: ${DB_PASSWORD}
         DB_HOST: ${DB_HOST}
         DB_PORT: ${DB_PORT}
-
-
     volumes:
         -  ${PATH_LOGS}:/system_logs 
     networks:
       - networks_project
+
 
   db_postgres:
     #container_name: db_postgres

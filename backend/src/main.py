@@ -4,12 +4,17 @@ from infra.db.initialize import create_database, create_admin_user
 from contextlib import asynccontextmanager
 from domain.user.routes import router as user_router
 from domain.auth.routes import router as auth_router
-from domain.external_api.routes import router as external_api_router 
+from domain.external_api.routes import router as external_api_router
+from domain.image_handler.routes import router as image_handler_router
 from colorama import Fore, Style
 from core.logger_config import logger
 import uvicorn
 import os
 import time
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,7 +49,8 @@ app.add_middleware(
 # 🔗 Rotas
 app.include_router(user_router)
 app.include_router(auth_router)
-app.include_router(external_api_router)
+# app.include_router(external_api_router)
+app.include_router(image_handler_router)
 
 # 🧾 Middleware de log
 @app.middleware("http")
