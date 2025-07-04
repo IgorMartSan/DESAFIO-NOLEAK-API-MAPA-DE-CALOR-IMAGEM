@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 import json
 
-router = APIRouter(prefix="/draw", tags=["Image handle"])
+router = APIRouter(prefix="/draw", tags=["Image handle (Sem Autenticação JWT)"])
 
 OBJETO_ALVO_DEFAULT = "person"
 
