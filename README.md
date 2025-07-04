@@ -55,9 +55,9 @@ Combinação de Heatmap + Bounding Boxes para visualização completa.
 
 Suporte a dois formatos de entrada:
 
-✅ Entrada via string JSON (campo json_data)
+✅ Entrada via string JSON (campo json_data, exite limite para o tamanho do JSON)
 
-✅ Entrada via upload de arquivo .json contendo os dados
+✅ Entrada via upload de arquivo .json contendo os dados (De prioridade para o test com esses end points )
 
 ### 👤 Autenticação e Gerenciamento de Usuários
 
@@ -93,6 +93,37 @@ Após subir a aplicação (`docker-compose`), acesse no navegador:
 - Visualizar os parâmetros necessários.
 - Fazer upload de imagem e JSON de forma prática.
 - Observar respostas (imagem de saída gerada) diretamente.
+
+## 🧪 Sugestão para Testes
+Dê preferência para testar os endpoints usando o upload do arquivo JSON (UploadFile) em vez do envio como string via campo json_data, especialmente para JSONs grandes ou gerados a partir de outras ferramentas (como Kibana ou Elasticsearch diretamente).
+
+
+✅ **Todos os endpoints podem ser testados diretamente na interface Swagger** 
+
+### 🎯 Endpoints Disponíveis
+
+#### 🚫 Não Recomendados (envio via string `json_data`)
+Estes endpoints utilizam `FormData` com string JSON. Úteis para testes rápidos, mas **podem causar problemas com arquivos grandes**.
+
+| Método | Rota                  | Descrição                              |
+|--------|-----------------------|----------------------------------------|
+| POST   | `/draw/bbox`          | Desenhar bounding boxes                |
+| POST   | `/draw/heatmap`       | Gerar heatmap da imagem                |
+| POST   | `/draw/heatmap_bbox`  | Gerar heatmap com bounding boxes       |
+
+---
+
+#### ✅ Recomendados (envio via upload de arquivo `.json`)
+Estes endpoints usam `UploadFile` para enviar o JSON — **mais confiável**, sem limites de tamanho, ideal para produção.
+
+| Método | Rota                        | Descrição                                           |
+|--------|-----------------------------|-----------------------------------------------------|
+| POST   | `/draw/bbox_file`           | Desenhar bounding boxes (com arquivo JSON)         |
+| POST   | `/draw/heatmap_file`        | Gerar heatmap da imagem (com arquivo JSON)         |
+| POST   | `/draw/heatmap_bbox_file`   | Gerar heatmap com bounding boxes (com arquivo JSON)|
+
+---
+
 
 
 
