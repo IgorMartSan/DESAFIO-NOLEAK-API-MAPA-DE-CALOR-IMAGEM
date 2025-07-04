@@ -1,77 +1,65 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from domain.image_handler.use_cases import UseCases
-
 from PIL import Image
 from io import BytesIO
-from tempfile import NamedTemporaryFile
-import shutil
-import os
+import json
 
-router = APIRouter(prefix="/draw", tags=["Visualização"])
+router = APIRouter(prefix="/draw", tags=["Image handle"])
 
-# Caminho fixo do JSON de exemplo
-JSON_PATH = r"/workspaces/DESAFIO-NOLEAK-API-MAPA-DE-CALOR-IMAGEM/backend/src/resp.json"
 OBJETO_ALVO_DEFAULT = "person"
 
-
-def salvar_upload_temp(image: UploadFile) -> str:
-    try:
-        suffix = os.path.splitext(image.filename)[-1]
-        temp = NamedTemporaryFile(delete=False, suffix=suffix)
-        with temp as f:
-            shutil.copyfileobj(image.file, f)
-        return temp.name
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar imagem: {str(e)}")
+json_example = (
+    '{"hits": {"hits": ['
+    '{"fields": {"deepstream-msg": ['
+    '"591|217.332|319.33|467.849|480|person|AREA1", '
+    '"0|148.393|86.8989|216.347|205.22|chair|AREA1"'
+    ']}}]}}'
+)
 
 
 @router.post(
     "/bbox",
     summary="Desenhar bounding boxes",
-    description="Recebe uma imagem e desenha bounding boxes baseadas nas informações do JSON. "
-                "Você pode especificar o tipo de objeto desejado (ex: 'person', 'car')."
+    description="Recebe uma imagem e desenha bounding boxes com base no JSON do Elasticsearch."
 )
+
+
 def gerar_bounding_boxes(
-    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG", openapi_extra={"example": "exemplo.jpg"}),
-    objeto_alvo: str = Form(
-        OBJETO_ALVO_DEFAULT,
-        description="Classe do objeto a ser destacada",
-        examples={
-            "person": {"value": "person"},
-            "car": {"value": "car"},
-        }
-    )
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto a ser destacada"),
+    json_data: str = Form(json_example, description="JSON no formato do Elasticsearch")
 ):
+    try:
+        parsed_data = json.loads(json_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao interpretar JSON: {e}")
+
     img = Image.open(BytesIO(image.file.read()))
-    json_data = UseCases.load_json(JSON_PATH)
-    result_image = UseCases.draw_bounding_boxes_from_image(json_data, img, objeto_alvo)
+    result_image = UseCases.draw_bounding_boxes_from_image(parsed_data, img, objeto_alvo)
 
     buf = BytesIO()
     result_image.save(buf, format="PNG")
     buf.seek(0)
     return StreamingResponse(buf, media_type="image/png")
 
-
 @router.post(
     "/heatmap",
     summary="Gerar heatmap da imagem",
-    description="Recebe uma imagem e retorna um heatmap baseado nas ocorrências do objeto alvo no JSON."
+    description="Recebe uma imagem e JSON do Elasticsearch para gerar o heatmap."
 )
 def gerar_heatmap(
-    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG", openapi_extra={"example": "exemplo.jpg"}),
-    objeto_alvo: str = Form(
-        OBJETO_ALVO_DEFAULT,
-        description="Classe do objeto para geração do heatmap",
-        examples={
-            "person": {"value": "person"},
-            "vehicle": {"value": "vehicle"},
-        }
-    )
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto para o heatmap"),
+    json_data: str = Form(json_example, description="JSON no formato do Elasticsearch", example=json_example)
 ):
+    try:
+        parsed_data = json.loads(json_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao interpretar JSON: {e}")
+
     img = Image.open(BytesIO(image.file.read()))
-    json_data = UseCases.load_json(JSON_PATH)
-    result_image = UseCases.generate_heatmap_from_image(json_data, img, objeto_alvo)
+    result_image = UseCases.generate_heatmap_from_image(parsed_data, img, objeto_alvo)
 
     buf = BytesIO()
     result_image.save(buf, format="PNG")
@@ -82,24 +70,95 @@ def gerar_heatmap(
 @router.post(
     "/heatmap_bbox",
     summary="Gerar heatmap com bounding boxes",
-    description="Recebe uma imagem e retorna um heatmap sobreposto com as bounding boxes dos objetos detectados."
+    description="Recebe imagem e JSON do Elasticsearch e retorna heatmap + boxes."
 )
 def gerar_heatmap_com_bounding_boxes(
-    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG", openapi_extra={"example": "exemplo.jpg"}),
-    objeto_alvo: str = Form(
-        OBJETO_ALVO_DEFAULT,
-        description="Classe do objeto para gerar heatmap + boxes",
-        examples={
-            "person": {"value": "person"},
-            "animal": {"value": "animal"},
-        }
-    )
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto para visualizar"),
+    json_data: str = Form(json_example, description="JSON no formato do Elasticsearch", example=json_example)
 ):
+    try:
+        parsed_data = json.loads(json_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao interpretar JSON: {e}")
+
     img = Image.open(BytesIO(image.file.read()))
-    json_data = UseCases.load_json(JSON_PATH)
-    result_image = UseCases.draw_heatmap_and_bounding_boxes_from_image(json_data, img, objeto_alvo)
+    result_image = UseCases.draw_heatmap_and_bounding_boxes_from_image(parsed_data, img, objeto_alvo)
 
     buf = BytesIO()
     result_image.save(buf, format="PNG")
     buf.seek(0)
     return StreamingResponse(buf, media_type="image/png")
+
+
+@router.post(
+    "/bbox_file",
+    summary="Desenhar bounding boxes (com arquivo JSON)",
+    description="Recebe uma imagem e um arquivo JSON com dados do Elasticsearch para desenhar bounding boxes."
+)
+def gerar_bounding_boxes_com_arquivo(
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    json_file: UploadFile = File(..., description="Arquivo JSON com dados do Elasticsearch"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto a ser destacada")
+):
+    try:
+        parsed_data = json.load(json_file.file)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao ler JSON do arquivo: {e}")
+
+    img = Image.open(BytesIO(image.file.read()))
+    result_image = UseCases.draw_bounding_boxes_from_image(parsed_data, img, objeto_alvo)
+
+    buf = BytesIO()
+    result_image.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
+
+
+@router.post(
+    "/heatmap_file",
+    summary="Gerar heatmap da imagem (com arquivo JSON)",
+    description="Recebe uma imagem e um arquivo JSON com dados do Elasticsearch para gerar o heatmap."
+)
+def gerar_heatmap_com_arquivo(
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    json_file: UploadFile = File(..., description="Arquivo JSON com dados do Elasticsearch"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto para o heatmap")
+):
+    try:
+        parsed_data = json.load(json_file.file)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao ler JSON do arquivo: {e}")
+
+    img = Image.open(BytesIO(image.file.read()))
+    result_image = UseCases.generate_heatmap_from_image(parsed_data, img, objeto_alvo)
+
+    buf = BytesIO()
+    result_image.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
+
+
+@router.post(
+    "/heatmap_bbox_file",
+    summary="Gerar heatmap com bounding boxes (com arquivo JSON)",
+    description="Recebe imagem e um arquivo JSON com dados do Elasticsearch para gerar heatmap + boxes."
+)
+def gerar_heatmap_e_bounding_boxes_com_arquivo(
+    image: UploadFile = File(..., description="Imagem no formato JPG ou PNG"),
+    json_file: UploadFile = File(..., description="Arquivo JSON com dados do Elasticsearch"),
+    objeto_alvo: str = Form(OBJETO_ALVO_DEFAULT, description="Classe do objeto para visualizar")
+):
+    try:
+        parsed_data = json.load(json_file.file)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao ler JSON do arquivo: {e}")
+
+    img = Image.open(BytesIO(image.file.read()))
+    result_image = UseCases.draw_heatmap_and_bounding_boxes_from_image(parsed_data, img, objeto_alvo)
+
+    buf = BytesIO()
+    result_image.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
+

@@ -31,9 +31,9 @@ async def lifespan(app: FastAPI):
 
 # Instancia FastAPI
 app = FastAPI(
-    title="User Management API",
+    title="Elasticsearch Vision Analytics API",
     version="1.0.0",
-    description="API para criação, atualização e exclusão de usuários.",
+    description="API para geração de mapas de calor e bounding boxes com base em dados do Elasticsearch.",
     lifespan=lifespan
 )
 
