@@ -65,6 +65,15 @@ Suporte a dois formatos de entrada:
 - Suporte à **autenticação JWT (JSON Web Token)** com endpoints para login e criação de token.
 - ⚠️ **Observação importante**: os endpoints de visualização de imagem **não exigem autenticação JWT** por padrão.
 
+✅ **Testar autenticação JWT**
+
+Para testar os endpoints protegidos com autenticação, utilize as credenciais padrão abaixo (úteis em ambiente de desenvolvimento):
+
+```env
+INITIAL_USER_LOGIN_JWT=admin
+INITIAL_USER_PASSWORD_JWT=automate123.
+```
+
 ## 📄 Documentação Interativa (Swagger)
 
 A documentação interativa é gerada automaticamente pelo FastAPI utilizando o Swagger UI, e foi configurada para fornecer uma interface amigável para explorar e testar todos os endpoints da API.

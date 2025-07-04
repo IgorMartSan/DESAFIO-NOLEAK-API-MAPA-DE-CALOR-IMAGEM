@@ -36,7 +36,6 @@ app = FastAPI(
     description="API para geração de mapas de calor e bounding boxes com base em dados do Elasticsearch.",
     lifespan=lifespan
 )
-
 # 🌍 CORS
 app.add_middleware(
     CORSMiddleware,
