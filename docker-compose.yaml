@@ -7,8 +7,8 @@ services:
       dockerfile: dockerfile
     ports:
       - ${PORT_API}:8010
-    # depends_on:
-    #   - db_postgres
+    depends_on:
+      - db_postgres
     logging:
       driver: "json-file"
       options:
@@ -28,7 +28,7 @@ services:
 
 
   db_postgres:
-    #container_name: db_postgres
+    container_name: db_postgres
     image: postgres:15.2-alpine
     restart: always
     ports:

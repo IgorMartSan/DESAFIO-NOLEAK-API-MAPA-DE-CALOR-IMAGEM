@@ -73,7 +73,7 @@ A documentação interativa é gerada automaticamente pelo FastAPI utilizando o 
 
 Após subir a aplicação (`docker-compose`), acesse no navegador:
 
-- http://localhost:32196/docs
+- http://localhost:32195/docs
 
 
 > 💡 Caso tenha alterado a porta no `docker-compose.yml`, ajuste a URL conforme necessário.
